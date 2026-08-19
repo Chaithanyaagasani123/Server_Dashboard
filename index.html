@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title> ServerHH</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-deep:#0a0e13;
+    --bg-panel:#121821;
+    --bg-panel-raised:#161e29;
+    --line:#212b38;
+    --line-soft:#1a2230;
+    --text:#cbd6e0;
+    --text-dim:#5f7186;
+    --text-faint:#3d4c5e;
+    --ok:#57d98c;
+    --ok-dim:#2c5e46;
+    --warn:#e8a94a;
+    --crit:#e8615f;
+    --info:#4fa8e8;
+    --mono:'IBM Plex Mono', monospace;
+    --sans:'Inter', sans-serif;
+  }
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  html,body{
+    background:var(--bg-deep);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+
+  body{
+    background-image:
+      radial-gradient(circle at 15% 0%, rgba(79,168,232,0.06), transparent 40%),
+      radial-gradient(circle at 85% 100%, rgba(87,217,140,0.05), transparent 45%);
+  }
+
+  ::selection{background:var(--info);color:#04121f;}
+
+  .wrap{
+    max-width:1360px;
+    margin:0 auto;
+    padding:22px 24px 60px;
+  }
+
+  /* ---------- TOP BAR ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:16px;
+    padding-bottom:20px;
+    border-bottom:1px solid var(--line);
+    margin-bottom:24px;
+  }
+
+  .host-id{display:flex;align-items:center;gap:14px;}
+
+  .host-id .glyph{
+    width:38px;height:38px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);
+    font-weight:700;
+    font-size:13px;
+    color:var(--ok);
+    background:var(--bg-panel);
+    box-shadow:0 0 0 1px rgba(87,217,140,0.08), 0 0 18px rgba(87,217,140,0.12);
+  }
+
+  .host-id h1{
+    font-family:var(--mono);
+    font-size:16px;
+    font-weight:600;
+    letter-spacing:0.02em;
+    color:#eef3f7;
+  }
+
+  .host-id .sub{
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--text-dim);
+    letter-spacing:0.03em;
+    margin-top:2px;
+  }
+
+  .top-stats{
+    display:flex;
+    align-items:center;
+    gap:28px;
+    flex-wrap:wrap;
+  }
+
+  .top-stat{text-align:right;}
+  .top-stat .k{
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    margin-bottom:4px;
+  }
+  .top-stat .v{
+    font-family:var(--mono);
+    font-size:14px;
+    color:var(--text);
+    font-weight:500;
+  }
+
+  .status-pill{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 14px;
+    border-radius:20px;
+    background:rgba(87,217,140,0.08);
+    border:1px solid var(--ok-dim);
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.05em;
+    color:var(--ok);
+  }
+  .status-pill .dot{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--ok);
+    box-shadow:0 0 8px var(--ok);
+    animation:pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse{
+    0%,100%{opacity:1;}
+    50%{opacity:0.35;}
+  }
+
+  /* ---------- SECTION LABEL ---------- */
+  .section-label{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    margin:34px 0 14px;
+  }
+  .section-label h2{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    font-weight:600;
+  }
+  .section-label .rule{
+    flex:1;
+    height:1px;
+    background:linear-gradient(90deg, var(--line), transparent);
+  }
+
+  /* ---------- GAUGE GRID ---------- */
+  .gauge-grid{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:16px;
+  }
+
+  .gauge-card{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 18px 14px;
+    position:relative;
+    overflow:hidden;
+  }
+
+  .gauge-card .eyebrow{
+    font-family:var(--mono);
+    font-size:10.5px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+
+  .gauge-card .eyebrow .flag{
+    font-size:9px;
+    padding:2px 6px;
+    border-radius:4px;
+    letter-spacing:0.05em;
+  }
+  .flag.ok{color:var(--ok);background:rgba(87,217,140,0.1);}
+  .flag.warn{color:var(--warn);background:rgba(232,169,74,0.12);}
+  .flag.crit{color:var(--crit);background:rgba(232,97,95,0.12);}
+
+  .gauge-body{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin-top:12px;
+  }
+
+  .gauge-ring{position:relative;width:84px;height:84px;flex-shrink:0;}
+  .gauge-ring svg{transform:rotate(-90deg);}
+  .gauge-ring .track{fill:none;stroke:var(--line-soft);stroke-width:8;}
+  .gauge-ring .fill{fill:none;stroke-width:8;stroke-linecap:round;transition:stroke-dasharray 0.6s ease;}
+  .gauge-ring .pct{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:16px;font-weight:600;color:var(--text);
+  }
+
+  .gauge-meta{flex:1;}
+  .gauge-meta .detail{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--text-dim);
+    line-height:1.7;
+  }
+  .gauge-meta .detail b{color:var(--text);font-weight:500;}
+
+  .spark{
+    display:block;
+    width:100%;
+    height:28px;
+    margin-top:12px;
+  }
+
+  /* ---------- NETWORK PANEL (signature) ---------- */
+  .scope-panel{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    padding:18px 20px 10px;
+    position:relative;
+  }
+
+  .scope-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-bottom:6px;
+  }
+
+  .scope-head h2{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    font-weight:600;
+  }
+
+  .scope-legend{display:flex;gap:22px;}
+  .scope-legend .item{
+    display:flex;align-items:center;gap:8px;
+    font-family:var(--mono);font-size:12px;color:var(--text-dim);
+  }
+  .scope-legend .swatch{width:9px;height:9px;border-radius:2px;}
+  .scope-legend .val{color:var(--text);font-weight:500;}
+
+  #scope{
+    width:100%;
+    height:180px;
+    display:block;
+    border-radius:6px;
+  }
+
+  /* ---------- LOWER GRID ---------- */
+  .lower-grid{
+    display:grid;
+    grid-template-columns:1.4fr 1fr;
+    gap:16px;
+  }
+
+  .panel{
+    background:var(--bg-panel);
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+  }
+
+  .panel-head{
+    padding:14px 18px;
+    border-bottom:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .panel-head h2{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--text-dim);
+    font-weight:600;
+  }
+  .panel-head .count{
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-faint);
+  }
+
+  table{width:100%;border-collapse:collapse;}
+  thead th{
+    text-align:left;
+    font-family:var(--mono);
+    font-size:10px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    padding:10px 18px;
+    border-bottom:1px solid var(--line-soft);
+    font-weight:500;
+  }
+  tbody td{
+    padding:10px 18px;
+    font-family:var(--mono);
+    font-size:12.5px;
+    color:var(--text);
+    border-bottom:1px solid var(--line-soft);
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:var(--bg-panel-raised);}
+
+  .proc-name{color:#e4ecf2;}
+  .proc-name .pid{color:var(--text-faint);font-size:11px;margin-left:6px;}
+
+  .bar-cell{display:flex;align-items:center;gap:8px;}
+  .bar-track{width:52px;height:5px;background:var(--line-soft);border-radius:3px;overflow:hidden;}
+  .bar-fill{height:100%;border-radius:3px;}
+
+  .sig-dot{
+    display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:7px;
+  }
+
+  /* ---------- LOG STREAM ---------- */
+  .log-body{
+    height:340px;
+    overflow-y:auto;
+    padding:12px 0;
+    font-family:var(--mono);
+    font-size:12px;
+  }
+  .log-body::-webkit-scrollbar{width:6px;}
+  .log-body::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+
+  .log-line{
+    display:flex;
+    gap:10px;
+    padding:5px 18px;
+    line-height:1.5;
+    border-left:2px solid transparent;
+  }
+  .log-line.enter{animation:fadein 0.4s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(-3px);}to{opacity:1;transform:none;}}
+
+  .log-time{color:var(--text-faint);flex-shrink:0;}
+  .log-lvl{flex-shrink:0;width:42px;font-weight:600;}
+  .log-lvl.INFO{color:var(--info);}
+  .log-lvl.WARN{color:var(--warn);}
+  .log-lvl.ERROR{color:var(--crit);}
+  .log-msg{color:var(--text-dim);}
+  .log-line.ERROR{border-left-color:var(--crit);background:rgba(232,97,95,0.04);}
+  .log-line.WARN{border-left-color:var(--warn);background:rgba(232,169,74,0.03);}
+
+  footer{
+    margin-top:32px;
+    padding-top:16px;
+    border-top:1px solid var(--line);
+    display:flex;
+    justify-content:space-between;
+    font-family:var(--mono);
+    font-size:11px;
+    color:var(--text-faint);
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  @media (max-width:980px){
+    .gauge-grid{grid-template-columns:repeat(2,1fr);}
+    .lower-grid{grid-template-columns:1fr;}
+  }
+  @media (max-width:560px){
+    .gauge-grid{grid-template-columns:1fr;}
+    .top-stats{gap:16px;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topbar">
+    <div class="host-id">
+      <div class="glyph">01</div>
+      <div>
+        <h1>Server Health Hub</h1>
+        <div class="sub">ap&#8209;south&#8209;1a &middot; bare&#8209;metal &middot; 10.4.2.18</div>
+      </div>
+    </div>
+    <div class="top-stats">
+      <div class="top-stat">
+        <div class="k">Uptime</div>
+        <div class="v" id="uptime">—</div>
+      </div>
+      <div class="top-stat">
+        <div class="k">Load avg</div>
+        <div class="v" id="loadavg">—</div>
+      </div>
+      <div class="top-stat">
+        <div class="k">Last deploy</div>
+        <div class="v">3d 6h ago</div>
+      </div>
+      <div class="status-pill"><span class="dot"></span>OPERATIONAL</div>
+    </div>
+  </div>
+
+  <div class="section-label"><h2>Resource utilization</h2><div class="rule"></div></div>
+
+  <div class="gauge-grid" id="gaugeGrid"></div>
+
+  <div class="section-label"><h2>Network throughput</h2><div class="rule"></div></div>
+
+  <div class="scope-panel">
+    <div class="scope-head">
+      <h2>eth0 &middot; live</h2>
+      <div class="scope-legend">
+        <div class="item"><span class="swatch" style="background:var(--ok)"></span>Inbound <span class="val" id="rxVal">0 Mb/s</span></div>
+        <div class="item"><span class="swatch" style="background:var(--info)"></span>Outbound <span class="val" id="txVal">0 Mb/s</span></div>
+      </div>
+    </div>
+    <canvas id="scope"></canvas>
+  </div>
+
+  <div class="section-label"><h2>Processes &amp; system log</h2><div class="rule"></div></div>
+
+  <div class="lower-grid">
+    <div class="panel">
+      <div class="panel-head"><h2>Top processes</h2><span class="count" id="procCount">— running</span></div>
+      <table>
+        <thead>
+          <tr><th>Process</th><th>CPU</th><th>Mem</th><th>Status</th></tr>
+        </thead>
+        <tbody id="procBody"></tbody>
+      </table>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head"><h2>System log</h2><span class="count">tail &middot; live</span></div>
+      <div class="log-body" id="logBody"></div>
+    </div>
+  </div>
+
+  <footer>
+    <span>Node console &middot; refreshed every 2s &middot; local session only</span>
+    <span id="clock">—</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+
+  /* ============ CONFIG ============ */
+  const GAUGES = [
+    { id:'cpu',  label:'CPU',    detail1:'8 cores &middot; <b>3.4 GHz</b>', unit:'%', base:38, vol:14, color:'ok' },
+    { id:'mem',  label:'Memory', detail1:'<b>{used} GB</b> / 32 GB', unit:'%', base:61, vol:6,  color:'warn', totalGB:32 },
+    { id:'disk', label:'Disk',   detail1:'<b>{used} GB</b> / 512 GB', unit:'%', base:72, vol:2,  color:'warn', totalGB:512 },
+    { id:'load', label:'Load avg', detail1:'1m <b>{v1}</b> &middot; 15m <b>{v15}</b>', unit:'', base:2.1, vol:1.1, color:'ok', isLoad:true }
+  ];
+
+  const COLORS = { ok:'#57d98c', warn:'#e8a94a', crit:'#e8615f', info:'#4fa8e8' };
+
+  const state = {};
+  GAUGES.forEach(g => state[g.id] = { value:g.base, history:Array(30).fill(g.base) });
+
+  /* ============ BUILD GAUGE CARDS ============ */
+  const grid = document.getElementById('gaugeGrid');
+  GAUGES.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'gauge-card';
+    card.innerHTML = `
+      <div class="eyebrow"><span>${g.label}</span><span class="flag ok" id="flag-${g.id}">NOMINAL</span></div>
+      <div class="gauge-body">
+        <div class="gauge-ring">
+          <svg width="84" height="84" viewBox="0 0 84 84">
+            <circle class="track" cx="42" cy="42" r="36"></circle>
+            <circle class="fill" id="ring-${g.id}" cx="42" cy="42" r="36" stroke="${COLORS[g.color]}"></circle>
+          </svg>
+          <div class="pct" id="pct-${g.id}">—</div>
+        </div>
+        <div class="gauge-meta">
+          <div class="detail" id="detail-${g.id}">—</div>
+        </div>
+      </div>
+      <canvas class="spark" id="spark-${g.id}"></canvas>
+    `;
+    grid.appendChild(card);
+  });
+
+  const CIRC = 2 * Math.PI * 36;
+
+  function setFlag(el, level){
+    el.className = 'flag ' + level;
+    el.textContent = level === 'ok' ? 'NOMINAL' : level === 'warn' ? 'ELEVATED' : 'CRITICAL';
+  }
+
+  function levelFor(pct){
+    if(pct >= 90) return 'crit';
+    if(pct >= 72) return 'warn';
+    return 'ok';
+  }
+
+  function drawSpark(canvas, history, color){
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width = canvas.clientWidth * devicePixelRatio;
+    const h = canvas.height = canvas.clientHeight * devicePixelRatio;
+    ctx.clearRect(0,0,w,h);
+    const max = Math.max(...history) * 1.15 || 1;
+    const min = 0;
+    const step = w / (history.length - 1);
+    ctx.beginPath();
+    history.forEach((v,i) => {
+      const x = i * step;
+      const y = h - ((v - min) / (max - min || 1)) * h;
+      i === 0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.5 * devicePixelRatio;
+    ctx.globalAlpha = 0.9;
+    ctx.stroke();
+    ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+    const grad = ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0, color + '33');
+    grad.addColorStop(1, color + '00');
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+
+  function updateGauges(){
+    GAUGES.forEach(g => {
+      const s = state[g.id];
+      let next;
+      if(g.isLoad){
+        next = Math.max(0.1, g.base + (Math.random()-0.5) * g.vol);
+      } else {
+        next = s.value + (Math.random()-0.5) * g.vol;
+        next = Math.max(4, Math.min(97, next));
+      }
+      s.value = next;
+      s.history.push(next);
+      s.history.shift();
+
+      const pctEl = document.getElementById('pct-' + g.id);
+      const ringEl = document.getElementById('ring-' + g.id);
+      const detailEl = document.getElementById('detail-' + g.id);
+      const flagEl = document.getElementById('flag-' + g.id);
+
+      if(g.isLoad){
+        pctEl.textContent = next.toFixed(1);
+        ringEl.style.stroke = COLORS.ok;
+        const pctVisual = Math.min(100, (next/8)*100);
+        ringEl.style.strokeDasharray = `${(pctVisual/100)*CIRC} ${CIRC}`;
+        detailEl.innerHTML = g.detail1.replace('{v1}', next.toFixed(2)).replace('{v15}', (g.base+0.3).toFixed(2));
+        setFlag(flagEl, next > 6 ? 'crit' : next > 4 ? 'warn' : 'ok');
+        drawSpark(document.getElementById('spark-'+g.id), s.history, COLORS.ok);
+      } else {
+        pctEl.textContent = Math.round(next) + '%';
+        const lvl = levelFor(next);
+        ringEl.style.stroke = COLORS[lvl];
+        ringEl.style.strokeDasharray = `${(next/100)*CIRC} ${CIRC}`;
+        if(g.totalGB){
+          const used = (next/100 * g.totalGB).toFixed(1);
+          detailEl.innerHTML = g.detail1.replace('{used}', used);
+        } else {
+          detailEl.innerHTML = g.detail1;
+        }
+        setFlag(flagEl, lvl);
+        drawSpark(document.getElementById('spark-'+g.id), s.history, COLORS[lvl]);
+      }
+    });
+  }
+
+  /* ============ NETWORK OSCILLOSCOPE ============ */
+  const scope = document.getElementById('scope');
+  const sctx = scope.getContext('2d');
+  const rx = Array(80).fill(20);
+  const tx = Array(80).fill(10);
+  let rxCurrent = 20, txCurrent = 10;
+
+  function resizeScope(){
+    scope.width = scope.clientWidth * devicePixelRatio;
+    scope.height = scope.clientHeight * devicePixelRatio;
+  }
+  window.addEventListener('resize', resizeScope);
+  resizeScope();
+
+  function drawScope(){
+    const w = scope.width, h = scope.height;
+    sctx.clearRect(0,0,w,h);
+
+    sctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    sctx.lineWidth = 1;
+    for(let i=0;i<=8;i++){
+      const y = (h/8)*i;
+      sctx.beginPath(); sctx.moveTo(0,y); sctx.lineTo(w,y); sctx.stroke();
+    }
+    for(let i=0;i<=16;i++){
+      const x = (w/16)*i;
+      sctx.beginPath(); sctx.moveTo(x,0); sctx.lineTo(x,h); sctx.stroke();
+    }
+
+    const maxV = 100;
+    function plot(data, color){
+      const step = w / (data.length - 1);
+      sctx.beginPath();
+      data.forEach((v,i) => {
+        const x = i*step;
+        const y = h - (v/maxV)*h;
+        i===0 ? sctx.moveTo(x,y) : sctx.lineTo(x,y);
+      });
+      sctx.strokeStyle = color;
+      sctx.lineWidth = 2 * devicePixelRatio;
+      sctx.shadowColor = color;
+      sctx.shadowBlur = 8;
+      sctx.stroke();
+      sctx.shadowBlur = 0;
+    }
+    plot(tx, COLORS.info);
+    plot(rx, COLORS.ok);
+  }
+
+  function updateScope(){
+    rxCurrent = Math.max(4, Math.min(96, rxCurrent + (Math.random()-0.48)*18));
+    txCurrent = Math.max(2, Math.min(80, txCurrent + (Math.random()-0.5)*12));
+    rx.push(rxCurrent); rx.shift();
+    tx.push(txCurrent); tx.shift();
+    drawScope();
+    document.getElementById('rxVal').textContent = rxCurrent.toFixed(1) + ' Mb/s';
+    document.getElementById('txVal').textContent = txCurrent.toFixed(1) + ' Mb/s';
+  }
+
+  /* ============ PROCESS TABLE ============ */
+  const PROCS = [
+    { name:'nginx',        pid:1042, cpu:4.2,  mem:2.1,  status:'running' },
+    { name:'postgres',     pid:2118, cpu:12.8, mem:18.4, status:'running' },
+    { name:'node',         pid:3391, cpu:22.5, mem:9.7,  status:'running' },
+    { name:'redis-server', pid:1587, cpu:2.1,  mem:4.3,  status:'running' },
+    { name:'worker-queue', pid:4420, cpu:8.6,  mem:6.2,  status:'running' },
+    { name:'cron',         pid:512,  cpu:0.3,  mem:0.4,  status:'sleeping' },
+    { name:'docker-proxy', pid:2298, cpu:1.4,  mem:1.1,  status:'running' },
+  ];
+
+  const procBody = document.getElementById('procBody');
+  document.getElementById('procCount').textContent = PROCS.length + ' running';
+
+  function barColor(v){
+    if(v >= 80) return COLORS.crit;
+    if(v >= 55) return COLORS.warn;
+    return COLORS.ok;
+  }
+
+  function renderProcs(){
+    procBody.innerHTML = PROCS.map(p => {
+      return `
+        <tr>
+          <td class="proc-name">${p.name}<span class="pid">#${p.pid}</span></td>
+          <td>
+            <div class="bar-cell">
+              <div class="bar-track"><div class="bar-fill" style="width:${p.cpu}%;background:${barColor(p.cpu)}"></div></div>
+              ${p.cpu.toFixed(1)}%
+            </div>
+          </td>
+          <td>
+            <div class="bar-cell">
+              <div class="bar-track"><div class="bar-fill" style="width:${p.mem*2.5}%;background:${barColor(p.mem*2.5)}"></div></div>
+              ${p.mem.toFixed(1)}%
+            </div>
+          </td>
+          <td><span class="sig-dot" style="background:${p.status==='running'?COLORS.ok:COLORS.info}"></span>${p.status}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function jitterProcs(){
+    PROCS.forEach(p => {
+      p.cpu = Math.max(0.1, Math.min(95, p.cpu + (Math.random()-0.5)*6));
+      p.mem = Math.max(0.1, Math.min(38, p.mem + (Math.random()-0.5)*1.5));
+    });
+    renderProcs();
+  }
+
+  /* ============ LOG STREAM ============ */
+  const LOG_TEMPLATES = [
+    { lvl:'INFO', msg:'health check passed for /api/v2/status' },
+    { lvl:'INFO', msg:'connection pool: 42/100 in use' },
+    { lvl:'INFO', msg:'gc cycle completed in 18ms' },
+    { lvl:'INFO', msg:'cache hit ratio 94.2% (last 5m)' },
+    { lvl:'WARN', msg:'response latency above 300ms on /api/v2/orders' },
+    { lvl:'WARN', msg:'disk io wait elevated on /dev/sda1' },
+    { lvl:'ERROR', msg:'upstream timeout connecting to payments-svc' },
+    { lvl:'INFO', msg:'deployed config revision applied' },
+    { lvl:'INFO', msg:'ssl certificate valid, 62 days remaining' },
+    { lvl:'WARN', msg:'memory usage crossed 70% threshold' },
+  ];
+
+  const logBody = document.getElementById('logBody');
+
+  function pushLog(){
+    const t = LOG_TEMPLATES[Math.floor(Math.random()*LOG_TEMPLATES.length)];
+    const now = new Date();
+    const ts = now.toTimeString().slice(0,8);
+    const line = document.createElement('div');
+    line.className = 'log-line enter ' + t.lvl;
+    line.innerHTML = `<span class="log-time">${ts}</span><span class="log-lvl ${t.lvl}">${t.lvl}</span><span class="log-msg">${t.msg}</span>`;
+    logBody.appendChild(line);
+    while(logBody.children.length > 60) logBody.removeChild(logBody.firstChild);
+    logBody.scrollTop = logBody.scrollHeight;
+  }
+
+  /* ============ UPTIME / CLOCK ============ */
+  const bootTime = Date.now() - (14*86400 + 6*3600 + 22*60) * 1000;
+  function updateClock(){
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toTimeString().slice(0,8) + ' local';
+
+    const diff = Math.floor((Date.now() - bootTime)/1000);
+    const d = Math.floor(diff/86400);
+    const h = Math.floor((diff%86400)/3600);
+    const m = Math.floor((diff%3600)/60);
+    const s = diff%60;
+    document.getElementById('uptime').textContent = `${d}d ${h}h ${m}m ${s}s`;
+    document.getElementById('loadavg').textContent = state.load ? state.load.value.toFixed(2) : '2.10';
+  }
+
+  /* ============ INIT LOOP ============ */
+  renderProcs();
+  for(let i=0;i<6;i++) pushLog();
+  updateGauges();
+  updateScope();
+  updateClock();
+
+  setInterval(updateGauges, 2200);
+  setInterval(updateScope, 500);
+  setInterval(jitterProcs, 3000);
+  setInterval(pushLog, 2600);
+  setInterval(updateClock, 1000);
+
+})();
+</script>
+</body>
+</html>
